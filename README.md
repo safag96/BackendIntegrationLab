@@ -7,8 +7,6 @@ HTTP, business logic, EF Core, and a real SQLite database. It includes money
 transfers with atomic transactions, isolated NUnit integration tests, and a
 controlled database failure that verifies transaction rollback.
 
-> Publishing setup: replace `YOUR_GITHUB_USERNAME` in the badge URLs with your
-> GitHub username. The badge reflects GitHub execution only after publication.
 
 ## Technologies
 
