@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Commit packages.lock.json so every independent CI job restores the same graph. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+</Project>

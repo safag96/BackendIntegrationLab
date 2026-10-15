@@ -1,0 +1,153 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install SDK and .NET 8 runtime
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          # Installing the .NET 8 SDK also supplies the .NET/ASP.NET Core 8 runtimes.
+          dotnet-version: '8.0.x'
+
+      - name: Show .NET environment
+        run: dotnet --info
+
+      - name: Restore locked dependencies
+        run: dotnet restore BackendIntegrationLab.sln --locked-mode
+
+      - name: Build complete solution
+        run: dotnet build BackendIntegrationLab.sln --configuration Release --no-restore -p:ContinuousIntegrationBuild=true
+
+  unit_tests:
+    name: Unit Tests
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install SDK and .NET 8 runtime
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          dotnet-version: '8.0.x'
+
+      # Each job has a fresh filesystem. Restore and compile on THIS runner.
+      - name: Restore locked dependencies
+        run: dotnet restore tests/BackendIntegrationLab.UnitTests/BackendIntegrationLab.UnitTests.csproj --locked-mode
+
+      - name: Build and run unit tests
+        run: >-
+          dotnet test tests/BackendIntegrationLab.UnitTests/BackendIntegrationLab.UnitTests.csproj
+          --configuration Release --no-restore -p:ContinuousIntegrationBuild=true
+          --logger "trx;LogFileName=unit-tests.trx"
+          --results-directory "${{ github.workspace }}/TestResults/Unit"
+
+      - name: Upload unit test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-test-results
+          path: TestResults/Unit/**/*.trx
+          if-no-files-found: warn
+          retention-days: 14
+
+  integration_tests:
+    name: Integration Tests
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install SDK and .NET 8 runtime
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          dotnet-version: '8.0.x'
+
+      - name: Restore locked dependencies
+        run: dotnet restore tests/BackendIntegrationLab.IntegrationTests/BackendIntegrationLab.IntegrationTests.csproj --locked-mode
+
+      # No filter: includes all HTTP/SQLite cases and the transaction rollback test.
+      # WebApplicationFactory starts the API; no background server is required.
+      - name: Build and run integration tests
+        run: >-
+          dotnet test tests/BackendIntegrationLab.IntegrationTests/BackendIntegrationLab.IntegrationTests.csproj
+          --configuration Release --no-restore -p:ContinuousIntegrationBuild=true
+          --logger "trx;LogFileName=integration-tests.trx"
+          --results-directory "${{ github.workspace }}/TestResults/Integration"
+
+      - name: Upload integration test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: integration-test-results
+          path: TestResults/Integration/**/*.trx
+          if-no-files-found: warn
+          retention-days: 14
+
+  ci_summary:
+    name: CI Summary
+    needs: [build, unit_tests, integration_tests]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Summarize results and enforce success
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          UNIT_RESULT: ${{ needs.unit_tests.result }}
+          INTEGRATION_RESULT: ${{ needs.integration_tests.result }}
+        run: |
+          {
+            echo "## CI results"
+            echo ""
+            echo "| Job | Result |"
+            echo "| --- | --- |"
+            echo "| Build | $BUILD_RESULT |"
+            echo "| Unit Tests | $UNIT_RESULT |"
+            echo "| Integration Tests | $INTEGRATION_RESULT |"
+            echo ""
+            echo "Download available TRX reports from this run's Artifacts section (14-day retention)."
+            echo "If restore or compilation failed before testing, a TRX report may not exist; inspect the job logs."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$BUILD_RESULT" != "success" || "$UNIT_RESULT" != "success" || "$INTEGRATION_RESULT" != "success" ]]; then
+            echo "::error::All required build and test jobs must succeed."
+            exit 1
+          fi

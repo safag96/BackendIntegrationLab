@@ -1,0 +1,54 @@
+# Build output and test reports (including runner-generated logs).
+**/bin/
+**/obj/
+**/TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+*.log
+
+# All local development/test databases and SQLite sidecar files.
+**/App_Data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+
+# IDE/user-specific state. Keep only the portable VS Code debug/task configurations.
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# Local configuration and credentials. Shared appsettings.json remains versioned.
+.env
+.env.*
+!.env.example
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+**/appsettings.Development.json
+**/appsettings.Production.json
+**/secrets.json
+**/secrets/
+*.pfx
+*.p12
+*.pem
+*.key
+*.pubxml
+*.pubxml.user
+NuGet.Config
+nuget.config
+
+# OS/editor leftovers.
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak

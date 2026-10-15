@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build lab",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["build", "${workspaceFolder}/BackendIntegrationLab.sln"],
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

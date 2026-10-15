@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug banking API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build lab",
+      "program": "${workspaceFolder}/src/BackendIntegrationLab.Api/bin/Debug/net8.0/BackendIntegrationLab.Api.dll",
+      "cwd": "${workspaceFolder}/src/BackendIntegrationLab.Api",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5080"
+      },
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Attach to NUnit test host",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickProcess}"
+    }
+  ]
+}

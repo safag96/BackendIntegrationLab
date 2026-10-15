@@ -1,0 +1,41 @@
+@baseUrl = http://localhost:5080
+# Replace these with the IDs returned by the two POST requests below.
+@sourceId = 00000000-0000-0000-0000-000000000000
+@destinationId = 00000000-0000-0000-0000-000000000000
+
+### Create Alice (copy the returned id into sourceId)
+POST {{baseUrl}}/api/accounts
+Content-Type: application/json
+
+{
+  "ownerName": "Alice",
+  "initialBalance": 500
+}
+
+### Create Bob (copy the returned id into destinationId)
+POST {{baseUrl}}/api/accounts
+Content-Type: application/json
+
+{
+  "ownerName": "Bob",
+  "initialBalance": 50
+}
+
+### Transfer 100
+POST {{baseUrl}}/api/transfers
+Content-Type: application/json
+
+{
+  "sourceAccountId": "{{sourceId}}",
+  "destinationAccountId": "{{destinationId}}",
+  "amount": 100
+}
+
+### Alice should now have 400
+GET {{baseUrl}}/api/accounts/{{sourceId}}
+
+### Bob should now have 150
+GET {{baseUrl}}/api/accounts/{{destinationId}}
+
+### History
+GET {{baseUrl}}/api/transfers
